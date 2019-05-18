@@ -1,0 +1,128 @@
+/* pages/main/begin/begin.wxss */
+
+.english{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 70px;
+  font-weight: bold;
+  font-size: 250%;
+  font-family: Times New Roman
+}
+
+.sound{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 5px
+}
+
+.meaning{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top:30px;
+  font-size: 100%
+}
+
+.btn0 {
+  width: 70%;
+  margin-top: 70px;
+  background-color: #fff;
+  color: #383a38d7;
+  border-radius: 98rpx;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgb(0, 0, 0, 0.1);
+  box-shadow:  0px 0px 10px rgb(0, 0, 0, 0.1);
+}
+
+.btn1 {
+  width: 70%;
+  margin-top: 50px;
+  background-color: #fff;
+  color: #383a38d7;
+  border-radius: 98rpx;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #55b355;
+  box-shadow:  0px 0px 10px #55b355;
+}
+
+.btn2 {
+  width: 70%;
+  margin-top: 30px;
+  background-color: #fff;
+  color: #383a38d7;
+  border-radius: 98rpx;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgb(51, 111, 202);
+  box-shadow:  0px 0px 10px rgb(51, 111, 202);
+}
+
+.btn3 {
+  width: 70%;
+  margin-top: 30px;
+  background-color: #fff;
+  color: #383a38d7;
+  border-radius: 98rpx;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgb(180, 71, 71);
+  box-shadow:  0px 0px 10px rgb(180, 71, 71);
+}
+
+.btnImg {
+  margin-right: 8rpx;
+  width: 46rpx;
+  height: 46rpx;
+}
+
+.btn0::after {
+  border-radius: 98rpx;
+  border: 0; 
+}
+
+.btn1::after {
+  border-radius: 98rpx;
+  border: 0; 
+}
+
+.btn2::after {
+  border-radius: 98rpx;
+  border: 0; 
+}
+
+.btn3::after {
+  border-radius: 98rpx;
+  border: 0; 
+}
+
+.btn0-active{
+  background-color: rgb(0, 0, 0, 0.1);
+  color: #fff;   
+}
+
+.btn1-active{
+  background-color: #55b355;
+  color: #fff;   
+}
+
+.btn2-active{
+  background-color: rgb(51, 111, 202);
+  color: #fff;   
+}
+
+.btn3-active{
+  background-color: rgb(180, 71, 71);
+  color: #fff;   
+}

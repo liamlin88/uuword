@@ -1,0 +1,38 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/main/begin/begin",
+    "pages/logs/logs",
+    "pages/main/setting/setting",
+    "pages/main/finish/finish"
+  ],
+  "window": {
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#39b5de",
+    "navigationBarTitleText": "UU-Words",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "white"
+  },
+  "tabBar": {
+    "color": "#858585",
+    "selectedColor": "#39b5de",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/main/begin/begin",
+        "iconPath": "images/icons/word2.png",
+        "selectedIconPath": "images/icons/word.png",
+        "text": "背单词"
+      },
+      {
+        "pagePath": "pages/main/setting/setting",
+        "iconPath": "images/icons/setting2.png",
+        "selectedIconPath": "images/icons/setting.png",
+        "text": "设置"
+      }
+    ]
+  },
+  "debug": true,
+  "sitemapLocation": "sitemap.json"
+}

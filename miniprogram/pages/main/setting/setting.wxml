@@ -1,0 +1,58 @@
+<!--miniprogram/pages/main/setting/setting.wxml-->
+
+  <view class=userinfo">
+      <image bindtap="bindViewTap" class="userinfo-avatar" src="{{userInfo.avatarUrl}}" mode="cover"></image>
+      <text class="userinfo-nickname">{{userInfo.nickName}}</text>
+  </view>
+  <view class='context2'>
+    <text class='text2'>学习情况</text>
+  </view>
+  <view class='context1'>
+    <text class='text1'>每日学习量(复习+新学)</text>
+    <input class='box' bindblur='bindKeyInput1' value="{{wordcount}}" type="text" /> 
+  </view>
+  <view class='context1'>
+    <text class='text1'>已背诵单词量: {{number}}</text>
+    <!-- <input class='box' value='{{number}}' type="text" />  -->
+  </view>
+    <view class='context1'>
+    <text class='text1'>剩余单词量: {{left_word}}</text>
+    <!-- <input class='box' value='{{left_word}}' type="text" />  -->
+  </view>
+  <view class='context1'>
+    <text class='text1'>平均每天新学</text>
+    <input class='box' bindinput='bindKeyInput4' type="text" /> 
+  </view>
+  <view class='context1'>
+    <text class='text1'>平均每天复习</text>
+    <input class='box' bindinput='bindKeyInput5' type="text" /> 
+  </view>
+  <view class='context2'>
+    <text class='text2'>选择词汇书</text>
+  </view>
+
+<scroll-view scroll-y="true" style="height: 125px;">
+  <view class="scroll-y1" >
+  <text class='context3'>已选词汇</text>
+    <view wx:for-items="{{scrolls}}" wx:key="name">
+      <view class='context4'>
+      <text class='text4'>{{item.name}}</text>
+      <button hover-class='active'><image class='image' src='../../../images/icons/close-circle.png' style='width: 20px; height: 20px' mode='aspectFit'></image></button>
+      </view>
+    </view>
+  </view>
+</scroll-view>
+
+<scroll-view scroll-y="true" style="height: 125px;">
+  <view class="scroll-y2" >
+  <view class='context3'>
+  <text>可选词汇</text>
+  </view>
+    <view wx:for-items="{{scrolls}}" wx:key="name">
+      <view class='context4'>
+      <text class='text4'>{{item.name}}</text>
+      <button hover-class='active'><image class='image' src='../../../images/icons/plus-circle.png' style='width: 20px; height: 20px' mode='aspectFit'></image></button>
+      </view>
+    </view>
+  </view>
+</scroll-view>

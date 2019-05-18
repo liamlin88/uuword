@@ -1,0 +1,10 @@
+<!--index.wxml-->
+<view class="container">
+  <image src='../../images/1.png' mode='aspectFit'></image>
+      <image bindtap="bindViewTap" class="userinfo-avatar" src="{{userInfo.avatarUrl}}" mode="cover"></image>
+      <text class='nickname'>{{userInfo.nickName}}</text>
+  <text class='text'>Welcome to UU-Words</text>
+  <button class="usermotto" catchtap='ontapbutton'>
+    <text>{{motto}}</text>
+  </button>
+</view>

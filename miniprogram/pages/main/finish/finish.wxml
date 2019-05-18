@@ -1,0 +1,21 @@
+<!--miniprogram/pages/main/finish/finish.wxml-->
+<view class='container'>
+  <view class='background1'>
+    <view class='background2'>
+      <text class='text'>恭喜你完成今天的任务</text>
+      <view class='container'>
+      <image class='logo' mode="cover" src='../../../images/icons/champing.png'></image>
+      </view>
+      <text class='date'>{{time}}</text>
+    </view>
+  </view>
+</view>
+    <view class='writeboard'>
+      <image class='pen' mode="cover" src='../../../images/icons/pen.png'></image>
+      <input class='write' bindinput='bindKeyInput' type="text" placeholder='记录下今天的心得体会' placeholder-class='word' /> 
+    </view>
+<view>
+        <button class='btn1' hover-class='btn1-active' bindtap='turnword'>再来10个</button>
+        <button class='btn2' hover-class='btn2-active' bindtap='turnset'>完成打卡</button>
+</view>
+

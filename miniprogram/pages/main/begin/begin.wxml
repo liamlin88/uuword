@@ -1,0 +1,40 @@
+<!--pages/main/begin/begin.wxml-->
+<!--pages/main/begin/begin.wxml-->
+<text class='english'>{{englishword}}</text>
+<text class='sound'>{{mark}}</text>
+<text class='meaning'style='visibility:{{chinesenameDisplayProperty}}'>释义：{{chinesename}}</text>
+<button class='btn0'
+style='visibility:{{showChinese}}'
+  bindtap="default"
+  hover-class="btn0-active"
+  catchtap='showChinesename'
+>
+  点击查看中文
+</button>
+<button class='btn1'
+style='visibility:{{chinesenameDisplayProperty}}'
+  bindtap="default"
+  hover-class="btn1-active"
+  catchtap='know'
+>
+  熟悉
+</button>
+
+<button class='btn2'
+style='visibility:{{chinesenameDisplayProperty}}'
+  bindtap="default"
+  hover-class="btn2-active" 
+  catchtap='unclear'
+  
+>
+  模糊
+</button>
+
+<button class='btn3'
+style='visibility:{{chinesenameDisplayProperty}}'
+  bindtap="default"
+  hover-class="btn3-active"
+  catchtap='strange'
+>
+  不认识
+</button>
