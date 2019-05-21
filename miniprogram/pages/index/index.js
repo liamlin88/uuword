@@ -8,12 +8,12 @@ Page({
     avatarUrl: "",
     userInfo: {}
   },
-  // 事件处理函数
-  bindViewTap: function () {
-    wx.navigateTo({
-      url: '../logs/logs'
-    })
-  },
+  // // 事件处理函数
+  // bindViewTap: function () {
+  //   wx.navigateTo({
+  //     url: '../logs/logs'
+  //   })
+  // },
   onLoad: function () {
 
     if (app.globalData.userInfo) {
@@ -85,11 +85,14 @@ Page({
   },
   ontapbutton: function () {
     var that = this
+    var app = getApp()
     const db = wx.cloud.database()
     db.collection("user").where({
-      _openid : this.data.userInfo.openid
+     // _openid : this.data.userInfo.openid
+      _openid:app.globalData.userid
     }).get({
       success(res){
+        console.log(res.data[0].wordcount)
         app.globalData.wordcount = res.data[0].wordcount
         app.globalData.exist = true
       
@@ -121,7 +124,12 @@ Page({
           db.collection('user').add({
             data: {
               userInfo: app.globalData.userInfo,
-              wordcount: WORDNum
+              wordcount: WORDNum,
+              wordsum:0,
+              reviewnum:0,
+              newnum:0,
+              begintime:null,
+              currentBook:null,
             },
             success: res => {
               console.log('[user数据库] [新增记录] 成功，记录 _id: ', res._id)
@@ -133,6 +141,19 @@ Page({
                 title: '新增记录失败'
               })
               console.error('[user数据库] [新增记录] 失败：', err)
+            }
+          })
+        }
+        else{//用户更改微信资料的时候同步更新
+          db.collection('user').where({
+            _openid:app.globalData.userid
+          }).get({
+            success(res){
+              db.collection('user').doc(res._id).update({
+                data:{
+                  userInfo:app.globalData.userInfo,
+                }
+              })
             }
           })
         }

@@ -4,7 +4,9 @@
     "pages/main/begin/begin",
     "pages/logs/logs",
     "pages/main/setting/setting",
-    "pages/main/finish/finish"
+    "pages/main/finish/finish",
+    "pages/main/check/check",
+    "pages/main/Calendar/Calendar"
   ],
   "window": {
     "backgroundTextStyle": "light",

@@ -20,12 +20,12 @@
     <!-- <input class='box' value='{{left_word}}' type="text" />  -->
   </view>
   <view class='context1'>
-    <text class='text1'>平均每天新学</text>
-    <input class='box' bindinput='bindKeyInput4' type="text" /> 
+    <text class='text1'>平均每天新学:{{average_new_perday}}</text>
+    <!-- <input class='box' bindinput='bindKeyInput4' type="text" />  -->
   </view>
   <view class='context1'>
-    <text class='text1'>平均每天复习</text>
-    <input class='box' bindinput='bindKeyInput5' type="text" /> 
+    <text class='text1'>平均每天复习:{{averge_review_perday}}</text>
+    <!-- <input class='box' bindinput='bindKeyInput5' type="text" />  -->
   </view>
   <view class='context2'>
     <text class='text2'>选择词汇书</text>
@@ -33,8 +33,8 @@
 
 <scroll-view scroll-y="true" style="height: 125px;">
   <view class="scroll-y1" >
-  <text class='context3'>已选词汇</text>
-    <view wx:for-items="{{scrolls}}" wx:key="name">
+ <text class='context3'>已选词汇书</text>
+	    <view wx:for-items="{{chosenBooksList}}" wx:key="name">
       <view class='context4'>
       <text class='text4'>{{item.name}}</text>
       <button hover-class='active'><image class='image' src='../../../images/icons/close-circle.png' style='width: 20px; height: 20px' mode='aspectFit'></image></button>
@@ -46,12 +46,12 @@
 <scroll-view scroll-y="true" style="height: 125px;">
   <view class="scroll-y2" >
   <view class='context3'>
-  <text>可选词汇</text>
+  <text>可选词汇书</text>
   </view>
-    <view wx:for-items="{{scrolls}}" wx:key="name">
+    <view wx:for-items="{{allBooksList}}" wx:key="name">
       <view class='context4'>
       <text class='text4'>{{item.name}}</text>
-      <button hover-class='active'><image class='image' src='../../../images/icons/plus-circle.png' style='width: 20px; height: 20px' mode='aspectFit'></image></button>
+            <button bindtap='chooseBookButton' hover-class='active' data-name='{{item.name}}'><image class='image' src='../../../images/icons/plus-circle.png' style='width: 20px; height: 20px' mode='aspectFit'></image></button>
       </view>
     </view>
   </view>

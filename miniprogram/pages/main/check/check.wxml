@@ -1,0 +1,6 @@
+<!--miniprogram/pages/main/check/check.wxml-->
+<calendar
+  class='header-style'
+  active_type="circle"
+  remark_style="date"
+/>

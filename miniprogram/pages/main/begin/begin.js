@@ -1,6 +1,7 @@
 // pages/main/begin/begin.js
+var util = require('../../../utils/util.js')
+const app = getApp()
 Page({
-
   /**
    * Page initial data
    */
@@ -16,7 +17,10 @@ Page({
     time: (new Date()).toString(),//获得当前时间函数
     number: 0,
     reviewNumber: 0, //复习单词数量 
-    ascPoint: []
+    ascPoint: [],
+    length:0,//改变wordsum用的
+    review:0,//改变realnum用的
+    currentbook:null,
   },
 
   /**
@@ -24,22 +28,29 @@ Page({
    */
   onLoad: function (options) {
    var that = this
-    var app = getApp()
+    that.getReciteWords()//更新数据库的wordsum
     const db = wx.cloud.database()
-    console.log('ssasadca', app.globalData.userid)
+    // 解决第一个单词不显示的问题（虽然还是会出现第一个单词不显示，但是是偶然现象）
     db.collection('user').where({
       _openid: app.globalData.userid
     }).get({
       success(res){
-        db.collection('words').skip(res.data[0].wordsum - 1).limit(1).get({
+            db.collection('words2').where({
+              range: res.data.currentBook
+            }).skip(res.data[0].wordsum - 1).limit(1).get({
           success(res){
             that.show(res.data[0]._id)
           }
         })
+        // setData({
+        //   currentbook: res.data.currentBook
+        // })
+     //   console.log('hujimh,ihj', that.data.currentbook)
+      },
+      complete:com =>{
+        that.getId()
       }
     })
-    that.getId(app.globalData.userid)
-    that.changeDBwordsum()
   },
   /**
    * Lifecycle function--Called when page is initially rendered
@@ -89,16 +100,143 @@ Page({
   },
 
   getId: function () {
-    this.getWords()
-    //之前的名字好像和功能不太对映哈
+    var app = getApp()
+    var recitenum//复习量
+    var twoThirdCountnum//每日单词量的2/3，取整
+    let realnum//当天复习的真实数量
+    var newnum//到当天为止新学单词数总和
+    var reviewnum//到当天为止复习单词书总和
+    var that = this
+    const db = wx.cloud.database()
+    db.collection('recite').where({
+      _openid:app.globalData.userid,
+      rememberstate:"unclear"
+    }).count({
+      success(res) {
+        recitenum = res.total
+      },
+      complete(com){
+        db.collection('user').where({
+          _openid: app.globalData.userid
+        }).get({
+          success(res) {
+            if (!app.globalData.learnmore) 
+            {//如果不是再来10个的话，这个量就取每日单词量的2/3，如果是再来10个的话就取7
+            twoThirdCountnum = (res.data[0].wordcount * 2 / 3).toFixed(0)
+            }
+            else{
+              twoThirdCountnum = 7
+            }
+          },
+          complete: com => {//防止异步执行，按顺序执行代码
+            realnum = twoThirdCountnum < recitenum ? twoThirdCountnum : recitenum
+            that.setData({
+              review: realnum
+            })
+            db.collection('user').where({
+              _openid:app.globalData.userid
+            }).get({
+              success(res){
+                if (!app.globalData.learnmore) {//单词总数 再来10个就取10，不然的话就从数据库中找
+                newnum = res.data[0].newnum + res.data[0].wordcount - that.data.review
+                }
+                else{
+                  newnum = res.data[0].newnum + 10 - that.data.review
+                }
+                reviewnum = res.data[0].reviewnum + that.data.review
+                console.log('newnum|reviewnum|res.new|res.review', newnum, reviewnum, res.data[0].newnum, res.data[0].reviewnum)
+              },
+            })
+            that.getReview()//取出复习的单词
+            that.getWords()//取出新学的单词
+          },
+        })
+      }
+    })
   },
   /*
   * 从数据库获得的单词
   * 这是一个可以用来递归的函数，因为微信限制我们只能拿20个一次，所以我们多次调用这个函数来多拿单词
   * 用了promise写法
   */
-  getWords: function (wordid = [], forget =[], repeat=[],skipCount = 0 ) {
+  getReview: function (wordid = [], forget = [], repeat = [], skipCount = 0) {
     let app = getApp()
+    //没查到怎么添加结构体数组，就声明了三个数组，每个数组对应位置都代表同一个单词的属性
+    const db = wx.cloud.database()
+    let length = 0
+    var that = this
+    db.collection('user').where({
+      _openid: app.globalData.userid
+    }).get()
+      .then(res => {
+          length =  that.data.review
+       //   console.log('1400s0as', length)
+        db.collection('user').doc(res.data[0]._id).update({//更新数据库中的复习总数
+          data: {
+            reviewnum: res.data[0].reviewnum + length
+          }
+        })
+        if (skipCount == 0) {
+          //微信的BUG, skip=0时候报错
+          return db.collection('recite').where({
+            rememberstate: "unclear"
+          }).where({
+            _openid:app.globalData.userid
+            }).orderBy('forgetTimes', 'desc').get()//按忘记次数降序排序
+        } else {
+          return db.collection('recite').skip(skipCount).where({
+            rememberstate: "unclear"
+          }.where({
+            _openid: app.globalData.userid
+          }).orderBy('forgetTimes', 'desc')).get()
+        }
+      })
+      .then(res => {
+        let unavailableWordsCount = length - skipCount
+        let t = unavailableWordsCount < 20 ? unavailableWordsCount : 20
+     //   console.log('dataaaaaaaaaaa',res.data)
+        for (let i = 0; i < t; i++) {
+          forget.push(0)
+          repeat.push(0)
+          wordid.push(res.data[i].wordid)
+          that.removeID(res.data[i].wordid)
+        }//初始化，将单词id放到wordid数组中，忘记和重复置0
+        if (res.data.length + skipCount < length) {
+          skipCount += res.data.length
+          this.getWords(wordid, forget, repeat, skipCount)
+        } else {
+          this.setData({//将复习和新学的单词合并到一起后成为wordid进行后续操作
+            id: this.data.id.concat(wordid),
+            forgetTimes: this.data.forgetTimes.concat(forget),
+            repeatTime: this.data.repeatTime.concat(repeat)
+          })
+        }
+    //    console.log('id|forget|repeatassss',that.data.id,that.data.forgetTimes,that.data.repeatTime)
+      })
+  },
+
+removeID:function(wordid){//数据库中复习的单词我设定成了以最后一次背诵为准，所以拿出来的数就把之前的数据就给删除了
+  var app = getApp()
+  const db = wx.cloud.database()
+  db.collection('recite').where({
+    _openid: app.globalData.userid
+  }).where({
+    wordid: wordid
+  }).get({
+    success(res) {
+      db.collection('recite').doc(res.data[0]._id).remove({
+        success(res) {
+          console.log('remove success')
+        }
+      })
+      console.log('remove success in ',res.data)
+    }
+    }) 
+},
+//getwords和getreview大同小异，只是从不同的数据中取值
+getWords: function (wordid = [], forget =[], repeat=[],skipCount = 0 ) {
+    let app = getApp()
+    var that = this
     //没查到怎么添加结构体数组，就声明了三个数组，每个数组对应位置都代表同一个单词的属性
     const db = wx.cloud.database()
     let length = 0
@@ -106,16 +244,38 @@ Page({
       _openid: app.globalData.userid
     }).get()
       .then(res => {
-        length = res.data[0].wordcount //数据库中openid等于该用户openid的数据只有一条，因此取第0号元素则为该用户，wordcount为每日单词量, skipCount表示已经拿了多少个单词了（微信有限制一次只能拿20条数据）
+        　if(app.globalData.learnmore){
+          length = 10;//因为那个界面上是再来10个，我觉得10个还是比较合理的，后续可以改，
+        }
+        else{
+           if (!app.globalData.learnmore){
+           length = res.data[0].wordcount - this.data.review
+           }
+           else{
+             length = 10 - this.data.review
+           }
+        //   console.log('1422222',length)
+           db.collection('user').doc(res.data[0]._id).update({
+             data: {
+               newnum: res.data[0].newnum+length
+             }
+           })
+        }
+        console.log('hujimh,ihj', res.data[0].currentBook)
           if (res.data[0].wordsum +skipCount == 0) {   
           //微信的BUG, skip=0时候报错
-          return db.collection('words').get()
+     //     return db.collection('words2').get()
+             return db.collection('words2').where({
+               range: res.data[0].currentBook
+             }).get()
         } else {
-          return db.collection('words').skip(res.data[0].wordsum+skipCount).get()
+       //   return db.collection('words2').skip(res.data[0].wordsum+skipCount).get()
+             return db.collection('words2').where({
+               range: res.data[0].currentBook
+             }).skip(res.data[0].wordsum + skipCount).get()
         }   
       })
       .then(res => {
-        console.log(res)
         let unavailableWordsCount = length - skipCount
         let t = unavailableWordsCount < 20 ? unavailableWordsCount : 20
         for (let i = 0; i < t; i++) {
@@ -128,10 +288,11 @@ Page({
           this.getWords(wordid, forget, repeat, skipCount)
         } else {
           this.setData({
-            id: wordid,
-            forgetTimes: forget,
-            repeatTime: repeat
+            id: this.data.id.concat(wordid),
+            forgetTimes: this.data.forgetTimes.concat(forget),
+            repeatTime: this.data.repeatTime.concat(repeat)
           })
+          console.log('id|forget|repeatnewwwww', this.data.id, this.data.forgetTimes, this.data.repeatTime)
         }
       })
   },
@@ -185,9 +346,9 @@ Page({
     console.log('times show end')
     if (this.data.id.length == 0 || checkbutton == true) {
       for (var i = 0; i < this.data.id.length; i++) {
-        this.onAdd(this.data.id[i], "forget", this.data.forgetTimes[i])
+        this.onAdd(this.data.id[i], "unclear", this.data.forgetTimes[i])//这个本来是forget我改成unclear，因为forgettimes已经对忘记和模糊进行区分，这里就没必要再多此一举了
       }
-      wx.redirectTo({//满足条件跳转到final
+      wx.redirectTo({//满足条件跳转到finish
         url: '../finish/finish',
       })
     }
@@ -213,7 +374,8 @@ Page({
   show: function (id) {
     var that = this
     const db = wx.cloud.database()
-    db.collection('words').doc(id).get({
+  //  db.collection('words').doc(id).get({
+    db.collection('words2').doc(id).get({
       success(res) {
         // res.data 包含该记录的数据
         that.setData({
@@ -241,122 +403,32 @@ Page({
     //换页的时候，记得叫一下这个函数
     this.notShowChinesename();
   },
-  review: function (wordid = [], skipCount = 0) {
+//用来改变数据库中 wordsum属性
+  getReciteWords: function(){
+    var that = this
+    var total
     const db = wx.cloud.database()
-    db.collection("user").where({
+    db.collection('recite').where({
       _openid: app.globalData.userid
-    }).get()
-      .then(res => {
-
-        // length = res.data[0].wordcount
-        if (skipCount == 0) {
-          //当跳转单词为0，从第一条数据按顺序返回20条数据
-          return db.collection('recite').get()
-        } else {
-          //如果不为0，则从第skipCount条往后开始返回20条数据
-
-          return db.collection('recite').skip(skipCount).get()
-        }
-
-      }).then(res => {
-
-        for (let i = 0; i < res.data.length; i++) {
-          wordid.push(res.data[i]._id)
-        }
-        if (res.data.length == 0) {
-
-          this.setData({
-            number: this.data.id.length,
-            // 100 将来会被 total number word 替代
-
-          })
-
-        } else {
-          skipCount += res.data.length
-          this.review(wordid, skipCount)
-
-          this.setData({
-            id: wordid,
-            reviewNumber: wordid.length,
-            // ascPoint: res.data.forgetTimes
-
-
-          })
-        }
-        console.log(this.data.id)
-
-      })
-    // if(this.data.reviewNumber == 0){
-    //   return db.collection("recite").get()
-    // }else{
-    // const db = wx.cloud.database()
-    // db.collection('recite').orderBy('forgetTimes', 'des')
-    //   .get()
-    //   .then(console.log)
-    //   .catch(console.error)
-    // }
-  },
-  //用来改变数据库中 wordsum属性
-  changeDBwordsum: function (openid) {
-    const db = wx.cloud.database()
-    var length = this.getReciteWords()
-    console.log('llllllllelsl',length)
-    db.collection('user').where({
-      _openid: openid
-    }).get({
-      success: res => {
-        db.collection('user').doc(res.data[0]._id).update({
-          data: {
-            wordsum: length
+    }).count({
+      success(res) {
+        total = res.total
+        that.setData({
+          length: total,
+        })
+      },
+      complete:com =>{
+        db.collection('user').where({
+          _openid: app.globalData.userid
+        }).get({
+          success: res => {
+            db.collection('user').doc(res.data[0]._id).update({
+              data: {
+                wordsum: that.data.length
+              }
+            })
           }
         })
-      }
-    })
-  },
-  getReciteWords: function (wordid = [], skipCount = 0) {
-
-      this.getTotalNumberWord()
-      var app = getApp()
-    const db = wx.cloud.database()
-    db.collection("user").where({
-      _openid: app.globalData.userid
-    }).get()
-      .then(res => {
-        // length = res.data[0].wordcount
-        if (skipCount == 0) {
-          //当跳转单词为0，从第一条数据按顺序返回20条数据
-          return db.collection('recite').get()
-        } else {
-          //如果不为0，则从第skipCount条往后开始返回20条数据
-
-          return db.collection('recite').skip(skipCount).get()
-        }
-
-      }).then(res => {
-
-        for (let i = 0; i < res.data.length; i++) {
-          wordid.push(res.data[i]._id)
-        }
-        if (res.data.length != 0) {
-          skipCount += res.data.length
-          //   this.getReciteWords(wordid, skipCount)
-
-          // this.setData({
-          //   id: wordid,
-          // })
-        }
-
-
-      })
-    return wordid.length
-  },
-  //获取words数据库里的单词总数量
-  getTotalNumberWord: function (wordid = [], skipCount = 0) {
-
-    const db = wx.cloud.database()
-    db.collection("words").get({
-      success: res => {
-        console.log("uye", res.data.length)
       }
     })
   },

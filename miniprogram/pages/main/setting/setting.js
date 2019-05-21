@@ -1,36 +1,31 @@
 // miniprogram/pages/main/setting/setting.js
+var util = require('../../../utils/util.js');
 const app = getApp()
+const db = wx.cloud.database()
 Page({
   data: {
 
     userInfo: {},
     hasUserInfo: false,
     wordcount: 0, //每日学习总量（复习加新学)
-    recited: 0, //已背诵的单词量
-    number: 0,
+    number: 0, //已背诵的单词量
+    review:0,
+    total:0,//单词总量
     left_word: 0, //剩余单词量
     average_new_perday: 0, // 平均每天新学单词量
     averge_review_perday: 0, //平均每天复习单词量
-    scrolls: [{
-      name: '大学英语四级词汇',
-    },
-    {
-      name: '大学英语六级词汇',
-    },
-    {
-      name: '大学英语六级词汇',
-    },
-    {
-      name: '大学英语六级词汇',
-    },
-    ]
+    /*计算用户使用天数，从当前日期-用户第一次使用日期（recite中该用户第一个便是最早的使用日期） */
+    begintime: "", //用户开始使用app的第一天
+    time: util.formatDate(new Date()),//获得当前时间函数
   },
 
   onLoad: function () {
-  //  this.getReciteWords()
     this.setData({
-      wordcount: app.globalData.wordcount
+      wordcount:app.globalData.wordcount
     })
+    this.checkBeginTime()
+    this.bindKeyInput2()
+    this.getBooks()
 
 
     if (app.globalData.userInfo) {
@@ -88,7 +83,7 @@ Page({
           const db = wx.cloud.database()
           db.collection('user').doc(_id).update({
             data: {
-              wordcount: that.data.inputValue
+              wordcount: parseInt(that.data.inputValue) 
             }
           })
           console.log("Update successfully")
@@ -100,154 +95,181 @@ Page({
 
     })
   },
-  bindKeyInput2:function(){
+  bindKeyInput2:function(){//设置已背单词量和剩余单词量
+   var that = this
+    const db = wx.cloud.database()
+    var num
+    var total
+    db.collection('user').where({
+      _openid:app.globalData.userid
+    }).get({
+      success(res){ 
+        db.collection('words2').where({
+          range: res.data.currentBook
+        }).count({
+          success(res) {
+            total = res.total
+            that.setData({
+              total: total,
+            })
+          },
+          complete: com => {
+            db.collection('user').where({
+              _openid: app.globalData.userid
+            }).get({
+              success: res => {
+                num = res.data[0].wordsum
+                that.setData({
+                  number: num,
+                  left_word: total - num,
+                })
+              }
+            })
+          }
+        })   
+      },
+    })
+   // db.collection('words').where({
+   /* db.collection('words1').where({
+      range: 'Cet6'
+    }).count({
+      success(res) {
+        total = res.total
+        that.setData({
+          total:total,
+        })
+      }
+    })*/
+  },
+  //计算用户使用天数
+  checkDate: function (endTime) {
+    var that = this
     const db = wx.cloud.database()
     db.collection('user').where({
-      _openid:app.globalData._openid
-    }).get({
-      success:res=>{
-        this.setData({
-          number:res.data[0].wordsum,
-          left_word: 100 - res.data[0].wordsum,//100被总量代替
-        })
-    //    console.log('o')
-      }
-    })
-  },
-  /*
-  //用来改变数据库中 wordsum属性
-  bindKeyInput2: function () {
-    var haverecited = 0
-    var _id = null
-    const db = wx.cloud.database()
-    var that = this
-    db.collection("recite").where({
-      _openid: app.globalData.openid
+      _openid: app.globalData.userid
     }).get({
       success: res => {
-        haverecited = res.data.length
-        this.setData({
-          recited: haverecited
+
+        that.setData({
+          begintime: util.formatDate(new Date(res.data[0].begintime))
         })
 
 
-        const db1 = wx.cloud.database()
-        db1.collection("user").where({
-          _openid: app.globalData.openid
+
+      }, complete: com => {//防止异步执行，按顺序执行代码
+        //日期格式化
+        var start_date = new Date(that.data.begintime);
+        var end_date = new Date(endTime.replace(/-/g, "/"));
+        //转成毫秒数，两个日期相减
+        var days = end_date.getTime() - start_date.getTime();
+        //转换成天数
+        app.globalData.totalday = parseInt(days / (1000 * 60 * 60 * 24));
+        //do something
+        console.log("The first day of using app = ", that.data.begintime)
+        console.log("The current day = ", endTime)
+        console.log("day = ", app.globalData.totalday);
+        this.getAverage()
+      },
+    })
+   
+
+  },
+  checkBeginTime: function () {
+    var time
+    var that = this
+    const db = wx.cloud.database()
+    db.collection('recite').where({
+      _openid: app.globalData.userid
+    }).get({
+      success: res => {
+        that.setData({
+          time: util.formatDate(new Date(res.data[0].time))
+        })
+        db.collection('user').where({
+          _openid: app.globalData.userid
         }).get({
           success: res => {
-            _id = res.data[0]._id
-            if (app.globalData.exist) {
-              const db = wx.cloud.database()
-              db.collection('user').doc(_id).update({
-                data: {
-                  wordsum: that.data.number
+            db.collection('user').doc(res.data[0]._id).update({
+              data: {
+                begintime: that.data.time
+              }
+            })
 
-                }
+          }
 
-              })
-
-            }
+        })
+      }, complete: com => {//防止异步执行，按顺序执行代码
+        db.collection('user').where({
+          _openid: app.globalData.userid
+        }).get({
+          success: res => {
           }
         })
+        this.checkDate(util.formatDate(new Date()))
+
       }
+
     })
   },
-  //获取recite数据库里的单词总数量
-  getReciteWords: function (wordid = [], skipCount = 0) {
-
-    this.getTotalNumberWord()
+  getAverage:function(){//设置平均每天新学和平均每天复习
     const db = wx.cloud.database()
-    db.collection("user").where({
-      _openid: app.globalData.userid
-    }).get()
-      .then(res => {
-        // length = res.data[0].wordcount
-        if (skipCount == 0) {
-          //当跳转单词为0，从第一条数据按顺序返回20条数据
-          return db.collection('recite').get()
-        } else {
-          //如果不为0，则从第skipCount条往后开始返回20条数据
-
-          return db.collection('recite').skip(skipCount).get()
-        }
-
-      }).then(res => {
-
-        for (let i = 0; i < res.data.length; i++) {
-          wordid.push(res.data[i]._id)
-        }
-        if (res.data.length == 0) {
-
-          this.setData({
-           // number: this.data.id.length,
-            number: app.bindKeyInput2(),
-            // 100 将来会被 total number word 替代
-          //  left_word: 100 - this.data.id.length,
-            left_word: 100 - this.data.number,
-            //recited : app.bindKeyInput2()
-          })
-          console.log('nummmmm', this.data.number)
-        //  recited= app.bindKeyInput2(this.data.number)
-        } else {
-          skipCount += res.data.length
-       //   this.getReciteWords(wordid, skipCount)
-
-          this.setData({
-            id: wordid,
+      var that = this
+      var newnum
+      var reviewnum
+      db.collection('user').where({
+        _openid: app.globalData.userid
+      }).get({
+        success(res) {
+          newnum = res.data[0].newnum
+          reviewnum = res.data[0].reviewnum
+          newnum = newnum / (app.globalData.totalday + 1)
+          reviewnum = reviewnum / (app.globalData.totalday + 1)
+          console.log('new|review', newnum, reviewnum, app.globalData.totalday)
+          that.setData({
+            average_new_perday: newnum,
+            averge_review_perday: reviewnum
           })
         }
-
-
       })
-
-
   },
-
-  //获取words数据库里的单词总数量
-  getTotalNumberWord: function (wordid = [], skipCount = 0) {
-
+  getBooks: function () {
     const db = wx.cloud.database()
-    db.collection("words").get({
-      success: res => {
-        console.log("uye", res.data.length)
-      }
+    db.collection('books').where({})
+      .get()
+      .then(books => {
+        this.setBooks(books.data.map(book =>
+          book.range
+        ))
+      })
+  },
+  setBooks: function (books) {
+    let allBooksList = books.map(book => {
+      return { name: book }
     })
-  }*/
-  //   const db = wx.cloud.database()
-  //   db.collection("user").where({
-  //     _openid: app.globalData.userid
-  //   }).get()
-  //     .then(res => {
-  //       // length = res.data[0].wordcount
-  //       if (skipCount == 0) {
-  //         //当跳转单词为0，从第一条数据按顺序返回20条数据
-  //         return db.collection('words').get()
-  //       } else {
-  //         //如果不为0，则从第skipCount条往后开始返回20条数据
-  //         console.log(skipCount)
-  //         return db.collection('words').skip(skipCount).get()
-  //       }
-
-  //     }).then(res => {
-
-  //       for (let i = 0; i < res.data.length; i++) {
-  //         wordid.push(res.data[i]._id)
-  //       }
-  //       if (res.data.length == 0) {
-  //       } else {
-  //         skipCount += res.data.length
-  //         this.getReciteWords(wordid, skipCount)
-  //         console.log(wordid)
-  //         this.setData({
-  //           id: wordid,
-  //         })
-  //       }
-  //       console.log("id", this.data.id.length)
-  //       this.setData({
-  //         number: this.data.id.length
-  //       })
-  //     })
-  // }
-
+    this.setData({
+      allBooksList: allBooksList
+    })
+  },
+  setChosenBook: function (name) {
+    this.setData({
+      chosenBooksList: [
+        { name: name }
+      ]
+    })
+  }
+  ,
+  chooseBookButton: function (event) {
+    db.collection('user').where({ _openid: app.globalData.userid }).get()
+      .then(res => {
+        return db.collection('user').doc(res.data[0]._id).update({
+          data: {
+            currentBook: event.currentTarget.dataset.name //这串东西是书名
+          }
+        })
+      })
+      .then(res => {
+        this.setChosenBook(event.currentTarget.dataset.name)
+      })
+      .catch(console.error)
+  },
 })

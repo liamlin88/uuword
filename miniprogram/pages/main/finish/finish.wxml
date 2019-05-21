@@ -16,6 +16,18 @@
     </view>
 <view>
         <button class='btn1' hover-class='btn1-active' bindtap='turnword'>再来10个</button>
-        <button class='btn2' hover-class='btn2-active' bindtap='turnset'>完成打卡</button>
+        <button class='btn2' hover-class='btn2-active' bindtap='showDialogBtn'>今日打卡</button>
 </view>
 
+<!-- 弹窗 -->
+<view class="modal-mask" bindtap="hideModal" catchtouchmove="preventTouchMove" wx:if="{{showModal}}"></view>
+<view class="modal-dialog" wx:if="{{showModal}}">
+  <view class="modal-title">打卡成功</view>
+  <view class="modal-content">
+      <view style='margin-bottom:5px'><image src='../../../images/icons/success.png' style='width: 33.9px; height: 30px '></image></view>
+      <text>您已连续打卡n天</text>
+  </view>
+  <view class="modal-footer">
+    <view class="btn-confirm" data-status="confirm" bindtap='onConfirm'>确定</view>
+</view>
+</view>
