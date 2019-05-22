@@ -26,7 +26,7 @@ Page({
     this.checkBeginTime()
     this.bindKeyInput2()
     this.getBooks()
-
+    this.getChosenBook()
 
     if (app.globalData.userInfo) {
       this.setData({
@@ -105,7 +105,7 @@ Page({
     }).get({
       success(res){ 
         db.collection('words2').where({
-          range: res.data.currentBook
+          range: res.data[0].currentBook
         }).count({
           success(res) {
             total = res.total
@@ -238,10 +238,21 @@ Page({
       .get()
       .then(books => {
         this.setBooks(books.data.map(book =>
-          book.range
+          book.chineseName
         ))
       })
   },
+  getChosenBook: function() {
+    db.collection('user').where({ _openid: app.globalData.userid })
+      .get()
+      .then(users => {
+        return this.getBookPromise({range:users.data[0].currentBook})
+      })
+      .then(books => {
+        this.setChosenBook(books.data[0].chineseName)
+      })
+  }
+  ,
   setBooks: function (books) {
     let allBooksList = books.map(book => {
       return { name: book }
@@ -256,20 +267,27 @@ Page({
         { name: name }
       ]
     })
-  }
-  ,
+  },
+  getBookPromise: function (where) {
+    return db.collection('books').where(where).get()
+  },
   chooseBookButton: function (event) {
-    db.collection('user').where({ _openid: app.globalData.userid }).get()
+    this.setChosenBook(event.currentTarget.dataset.name)
+    let range = ''
+    this.getBookPromise({chineseName:event.currentTarget.dataset.name})
+      .then(books => {
+        range = books.data[0].range
+        return db.collection('user').where({ _openid: app.globalData.userid }).get()
+      })
       .then(res => {
         return db.collection('user').doc(res.data[0]._id).update({
           data: {
-            currentBook: event.currentTarget.dataset.name //这串东西是书名
+            currentBook: range
           }
         })
       })
       .then(res => {
-        this.setChosenBook(event.currentTarget.dataset.name)
+        this.bindKeyInput2()
       })
-      .catch(console.error)
   },
 })
